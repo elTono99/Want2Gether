@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Want2Gether</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loader" class="hidden"><div></div></div>
+
+    <div id="auth-container">
+        <div id="login-view">
+            <div class="auth-header"><img src="/favicon.ico" alt="App Logo" class="logo"><h1>Want2Gether</h1></div>
+            <form id="login-form">
+                <input type="text" id="login-username" placeholder="Benutzername" required>
+                <input type="password" id="login-password" placeholder="Passwort" required>
+                <button type="submit">Einloggen</button>
+                <p class="form-switch">Noch kein Account? <a href="#" id="show-register" class="js-show-register">Registrieren</a></p>
+            </form>
+        </div>
+        <div id="register-view" class="hidden">
+            <div class="auth-header"><img src="/favicon.ico" alt="App Logo" class="logo"><h1>Account erstellen</h1></div>
+            <form id="register-form">
+                <input type="text" id="register-username" placeholder="Benutzername" required>
+                <input type="email" id="register-email" placeholder="E-Mail-Adresse" required>
+                <input type="password" id="register-password" placeholder="Passwort" required>
+                <button type="submit">Registrieren</button>
+                <p class="form-switch">Schon einen Account? <a href="#" id="show-login" class="js-show-login">Einloggen</a></p>
+            </form>
+        </div>
+
+        <p class="contact-info">
+            Bei Problemen oder Verbesserungsvorschlägen senden Sie eine E-Mail an<br><a href="mailto:Want2Gether.app@gmail.com">Want2Gether.app@gmail.com</a>
+        </p>
+    </div>
+
+    <div id="app-container" class="hidden">
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <h2>Want2Gether</h2>
+                <div><span id="welcome-user"></span><button id="logout-btn">Logout</button></div>
+            </div>
+            <div class="control-section">
+                <h3>Worauf hast du Lust?</h3>
+                <div id="activity-buttons">
+                    <button data-category="dating">❤️ Dating</button>
+                    <button data-category="coffee">☕ Kaffee</button>
+                    <button data-category="food">🍕 Essen</button>
+                    <button data-category="sport">🏀 Sport</button>
+                    <button data-category="park">🌳 Park</button>
+                    <button data-category="movie">🎬 Kino</button>
+                    <button data-category="culture">🎭 Kultur</button>
+                    <button data-category="travel">✈️ Reisen</button>
+                    <button data-category="study">📚 Lernen</button>
+                    <button data-category="game">🎮 Zocken</button>
+                </div>
+                <textarea id="activity-description" placeholder="Kurze Beschreibung (optional)..."></textarea>
+                <label for="visibility-duration" class="timer-label">Wie lange sichtbar sein?</label>
+                <select id="visibility-duration"><option value="30">30 Minuten</option><option value="60" selected>1 Stunde</option><option value="180">3 Stunden</option><option value="0">Unbegrenzt</option></select>
+                <button id="update-activity-btn" class="main-action-btn">Aktivität starten / aktualisieren</button>
+                <button id="cancel-activity-btn" class="cancel-btn">Aktivität beenden</button>
+            </div>
+            <div class="control-section">
+                <h3>Umkreis-Einstellungen (km)</h3>
+                <label for="view-radius">Sichtbarer Umkreis: <span id="view-radius-value">10</span> km</label>
+                <input type="range" id="view-radius" min="1" max="50" value="10">
+                <label for="visibility-radius">Eigene Sichtbarkeit: <span id="visibility-radius-value">5</span> km</label>
+                <input type="range" id="visibility-radius" min="1" max="50" value="5">
+            </div>
+            <div class="control-section">
+                <h3>Profileinstellungen</h3>
+                <form id="profile-settings-form">
+                    <label for="profile-picture-url">Profilbild-URL</label>
+                    <input type="url" id="profile-picture-url" placeholder="https://beispiel.de/bild.png">
+                    <label for="profile-description">Über mich</label>
+                    <textarea id="profile-description" placeholder="Erzähl etwas über dich..."></textarea>
+                    <label for="profile-age">Alter</label>
+                    <input type="number" id="profile-age" placeholder="Dein Alter">
+                    <label for="profile-interests">Interessen (durch Komma getrennt)</label>
+                    <input type="text" id="profile-interests" placeholder="z.B. Musik, Wandern, Kochen">
+                    <label for="profile-instagram">Instagram-Username</label>
+                    <input type="text" id="profile-instagram" placeholder="ohne @">
+                    <label for="profile-tiktok">TikTok-Username</label>
+                    <input type="text" id="profile-tiktok" placeholder="ohne @">
+                    <button type="submit" class="main-action-btn">Profil speichern</button>
+                </form>
+            </div>
+            <div class="control-section" id="user-list-section">
+                <h3>Aktive User</h3>
+                <div id="user-list"></div>
+            </div>
+        </aside>
+        <main id="map-container"><div id="map"></div></main>
+    </div>
+
+    <div id="chat-container" class="hidden">
+        <div id="chat-header">
+            <a href="#" id="chat-partner-link">
+                <span>Chat mit <b id="chat-partner-name"></b></span>
+                <small id="chat-activity-description"></small>
+            </a>
+            <button id="close-chat-btn">×</button>
+        </div>
+        <div id="chat-messages"></div>
+        <form id="chat-form">
+            <input id="chat-input" type="text" placeholder="Nachricht..." autocomplete="off">
+            <button type="submit" title="Senden">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg>
+            </button>
+        </form>
+    </div>
+
+    <div id="profile-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" id="close-profile-modal-btn">×</span>
+            <div id="profile-modal-content"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
