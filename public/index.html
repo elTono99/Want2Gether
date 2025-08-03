@@ -32,16 +32,18 @@
                 <p class="form-switch">Schon einen Account? <a href="#" id="show-login" class="js-show-login">Einloggen</a></p>
             </form>
         </div>
-
         <p class="contact-info">
             Bei Problemen oder Verbesserungsvorschlägen senden Sie eine E-Mail an<br><a href="mailto:Want2Gether.app@gmail.com">Want2Gether.app@gmail.com</a>
         </p>
     </div>
 
     <div id="app-container" class="hidden">
+        <div id="sidebar-overlay" class="hidden"></div>
+        
         <aside id="sidebar">
             <div class="sidebar-header">
                 <h2>Want2Gether</h2>
+                <button id="sidebar-close-btn" class="sidebar-close-btn">×</button>
                 <div><span id="welcome-user"></span><button id="logout-btn">Logout</button></div>
             </div>
             <div class="control-section">
@@ -94,7 +96,12 @@
                 <div id="user-list"></div>
             </div>
         </aside>
-        <main id="map-container"><div id="map"></div></main>
+        <main id="map-container">
+            <div id="map"></div>
+            <button id="menu-toggle-btn">
+                <svg viewBox="0 0 24 24"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>
+            </button>
+        </main>
     </div>
 
     <div id="chat-container" class="hidden">
@@ -126,13 +133,6 @@
     <script src="client.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
 
 
 

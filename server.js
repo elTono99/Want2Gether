@@ -35,24 +35,19 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, trim: true, index: true },
     email: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true },
+    isAdmin: { type: Boolean, default: false },
     profilePicture: { type: String, default: '/default-avatar.png' },
     profileDescription: { type: String, default: '', maxLength: 250 },
     age: { type: Number, min: 16, max: 99 },
     interests: [{ type: String }],
-    socialLinks: {
-        instagram: { type: String, default: '' },
-        tiktok: { type: String, default: '' },
-    },
+    socialLinks: { instagram: { type: String, default: '' }, tiktok: { type: String, default: '' } },
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     is_active: { type: Boolean, default: false },
     currentActivity: String,
     activityDescription: String,
     visibilityRadius: { type: Number, default: 5 },
     visibleUntil: { type: Date },
-    location: {
-        type: { type: String, enum: ['Point'], default: 'Point' },
-        coordinates: { type: [Number], default: [0, 0] }
-    }
+    location: { type: { type: String, enum: ['Point'], default: 'Point' }, coordinates: { type: [Number], default: [0, 0] } }
 });
 UserSchema.index({ location: '2dsphere' });
 const User = mongoose.model('User', UserSchema);
@@ -122,38 +117,9 @@ app.get('/api/user/:id', async (req, res) => {
     }
 });
 
-app.post('/api/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) return res.status(500).json({ message: "Fehler beim Ausloggen." });
-        res.clearCookie('connect.sid');
-        res.status(200).json({ message: "Erfolgreich ausgeloggt." });
-    });
-});
-
-app.get('/api/session', async (req, res) => {
-    if (req.session.userId) {
-        const user = await User.findById(req.session.userId).select('-password');
-        if (!user) return res.status(200).json({ loggedIn: false });
-        res.status(200).json({ loggedIn: true, user: user });
-    } else {
-        res.status(200).json({ loggedIn: false });
-    }
-});
-
-app.post('/api/favorite/:id', async (req, res) => {
-    if (!req.session.userId) return res.status(401).json({ message: "Nicht authentifiziert." });
-    try {
-        const user = await User.findById(req.session.userId);
-        const targetUserId = req.params.id;
-        const index = user.favorites.indexOf(targetUserId);
-        if (index > -1) user.favorites.splice(index, 1);
-        else user.favorites.push(targetUserId);
-        await user.save();
-        res.status(200).json({ favorites: user.favorites });
-    } catch (error) {
-        res.status(500).json({ message: "Serverfehler." });
-    }
-});
+app.post('/api/logout', (req, res) => { req.session.destroy(err => { if (err) return res.status(500).json({ message: "Fehler beim Ausloggen." }); res.clearCookie('connect.sid'); res.status(200).json({ message: "Erfolgreich ausgeloggt." }); }); });
+app.get('/api/session', async (req, res) => { if (req.session.userId) { const user = await User.findById(req.session.userId).select('-password'); if (!user) return res.status(200).json({ loggedIn: false }); res.status(200).json({ loggedIn: true, user: user }); } else { res.status(200).json({ loggedIn: false }); } });
+app.post('/api/favorite/:id', async (req, res) => { if (!req.session.userId) return res.status(401).json({ message: "Nicht authentifiziert." }); try { const user = await User.findById(req.session.userId); const targetUserId = req.params.id; const index = user.favorites.indexOf(targetUserId); if (index > -1) user.favorites.splice(index, 1); else user.favorites.push(targetUserId); await user.save(); res.status(200).json({ favorites: user.favorites }); } catch (error) { res.status(500).json({ message: "Serverfehler." }); } });
 
 const onlineUsers = new Map();
 io.on('connection', (socket) => {
@@ -163,12 +129,20 @@ io.on('connection', (socket) => {
     onlineUsers.set(userId, socket.id);
     console.log(`Benutzer ${userId} verbunden. Online: ${onlineUsers.size}`);
     const broadcastUpdates = async () => {
-        const allActiveUsers = await User.find({ is_active: true, visibleUntil: { $gt: new Date() } }).select('-password -email');
+        const allActiveUsers = await User.find({
+            is_active: true,
+            $or: [{ visibleUntil: { $gt: new Date() } }, { visibleUntil: null }]
+        }).select('-password -email');
         io.emit('users-update', allActiveUsers);
     };
     socket.on('update-data', async (data) => {
         if (!userId) return;
-        let visibleUntilDate = data.activity.visibilityDuration > 0 ? new Date(Date.now() + data.activity.visibilityDuration * 60 * 1000) : null;
+        let visibleUntilDate;
+        if (data.activity.visibilityDuration > 0) {
+            visibleUntilDate = new Date(Date.now() + data.activity.visibilityDuration * 60 * 1000);
+        } else {
+            visibleUntilDate = null;
+        }
         await User.findByIdAndUpdate(userId, {
             is_active: data.activity.category !== 'none',
             currentActivity: data.activity.category,
@@ -198,3 +172,8 @@ io.on('connection', (socket) => {
 });
 const PORT = 3000;
 server.listen(PORT, () => console.log(`🚀 Server läuft auf http://localhost:${PORT}`));
+
+
+
+
+

@@ -5,43 +5,28 @@ const userMarkers = {};
 const activityIcons = { dating: '❤️', coffee: '☕', food: '🍕', sport: '🏀', park: '🌳', movie: '🎬', culture: '🎭', travel: '✈️', study: '📚', game: '🎮' };
 let chatPartnerId = null;
 
-// FIX: Überarbeitete und robustere Initialisierung
-document.addEventListener('DOMContentLoaded', () => {
-    // Statische Listener für den Auth-Bereich sofort anbinden
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const showRegisterLink = document.getElementById('show-register');
-    const showLoginLink = document.getElementById('show-login');
-    const loginView = document.getElementById('login-view');
-    const registerView = document.getElementById('register-view');
-
-    if (loginForm) loginForm.addEventListener('submit', handleLogin);
-    if (registerForm) registerForm.addEventListener('submit', handleRegister);
-    if (showRegisterLink) showRegisterLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginView.classList.add('hidden');
-        registerView.classList.remove('hidden');
-    });
-    if (showLoginLink) showLoginLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        registerView.classList.add('hidden');
-        loginView.classList.remove('hidden');
-    });
-    
-    // Globale Referenzen definieren
-    assignElements();
-    
-    // Session prüfen, um zu entscheiden, ob die App gestartet wird
-    checkSession();
-});
-
-// Hält alle DOM-Elemente der App global verfügbar
 let loader, welcomeUserEl, logoutBtn, activityButtons, activityDescriptionInput, visibilityDurationSelect,
     updateActivityBtn, cancelActivityBtn, viewRadiusSlider, viewRadiusValue, visibilityRadiusSlider,
     visibilityRadiusValue, userList, profileSettingsForm, profilePictureUrlInput, profileDescriptionInput,
     profileAgeInput, profileInterestsInput, profileInstagramInput, profileTiktokInput, chatContainer,
     chatPartnerName, chatPartnerLink, chatActivityDescription, closeChatBtn, chatMessages, chatForm,
-    chatInput, profileModal, profileModalContent, closeProfileModalBtn;
+    chatInput, profileModal, profileModalContent, closeProfileModalBtn, menuToggleBtn, sidebar, sidebarOverlay, sidebarCloseBtn;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const showRegisterLink = document.querySelector('.js-show-register');
+    const showLoginLink = document.querySelector('.js-show-login');
+    const loginView = document.getElementById('login-view');
+    const registerView = document.getElementById('register-view');
+
+    if (loginForm) loginForm.addEventListener('submit', handleLogin);
+    if (registerForm) registerForm.addEventListener('submit', handleRegister);
+    if (showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); loginView.classList.add('hidden'); registerView.classList.remove('hidden'); });
+    if (showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); registerView.classList.add('hidden'); loginView.classList.remove('hidden'); });
+    
+    checkSession();
+});
 
 function assignElements() {
     loader = document.getElementById('loader');
@@ -75,10 +60,14 @@ function assignElements() {
     profileModal = document.getElementById('profile-modal');
     profileModalContent = document.getElementById('profile-modal-content');
     closeProfileModalBtn = document.getElementById('close-profile-modal-btn');
+    menuToggleBtn = document.getElementById('menu-toggle-btn');
+    sidebar = document.getElementById('sidebar');
+    sidebarOverlay = document.getElementById('sidebar-overlay');
+    sidebarCloseBtn = document.getElementById('sidebar-close-btn');
 }
 
-function showLoader() { loader.classList.remove('hidden'); }
-function hideLoader() { loader.classList.add('hidden'); }
+function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
+function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
 function toggleView(isLoggedIn) { 
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-container');
@@ -100,9 +89,43 @@ async function handleProfileSave(e) { e.preventDefault(); const profileData = { 
 async function toggleFavorite(targetUserId) { if (!userState.user) return; const isCurrentlyFavorite = userState.user.favorites.includes(targetUserId); if (isCurrentlyFavorite) { userState.user.favorites = userState.user.favorites.filter(id => id !== targetUserId); } else { userState.user.favorites.push(targetUserId); } const allFavButtonsForUser = document.querySelectorAll(`.favorite-btn[data-userid="${targetUserId}"]`); allFavButtonsForUser.forEach(btn => { btn.classList.toggle('is-favorite', !isCurrentlyFavorite); btn.innerHTML = !isCurrentlyFavorite ? '★' : '☆'; }); try { const response = await fetch(`/api/favorite/${targetUserId}`, { method: 'POST' }); if (!response.ok) { throw new Error("Server-Anfrage fehlgeschlagen"); } const data = await response.json(); userState.user.favorites = data.favorites; await sendDataToServer(); } catch (error) { console.error("Fehler beim Favorisieren:", error); } }
 
 function initMap() { map = L.map('map').setView([52.52, 13.40], 13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map); navigator.geolocation.watchPosition(position => { const newPos = { lat: position.coords.latitude, lng: position.coords.longitude }; if (!userState.position || Math.abs(newPos.lat - userState.position.lat) > 0.0001 || Math.abs(newPos.lng - userState.position.lng) > 0.0001) { userState.position = newPos; if (userMarkers['own']) { userMarkers['own'].setLatLng(newPos); } else { userMarkers['own'] = L.marker(newPos).addTo(map).bindPopup('<b>Das bist du!</b>').openPopup(); } map.panTo(newPos); sendDataToServer(); } }, () => { alert('Wir konnten deine Position nicht abrufen. Bitte erlaube den Zugriff.'); }, { enableHighAccuracy: true }); }
-function initAppLogic() { if (!userState.user) return; welcomeUserEl.textContent = `Hi, ${userState.user.username}!`; populateProfileForm(); initSocket(); addAppEventListeners(); }
+function initAppLogic() { if (!userState.user) return; assignElements(); welcomeUserEl.textContent = `Hi, ${userState.user.username}!`; populateProfileForm(); initSocket(); addAppEventListeners(); }
 function populateProfileForm() { const u = userState.user; if (!u) return; profilePictureUrlInput.value = (u.profilePicture && !u.profilePicture.startsWith('/')) ? u.profilePicture : ''; profileDescriptionInput.value = u.profileDescription || ''; profileAgeInput.value = u.age || ''; profileInterestsInput.value = u.interests ? u.interests.join(', ') : ''; profileInstagramInput.value = u.socialLinks ? u.socialLinks.instagram : ''; profileTiktokInput.value = u.socialLinks ? u.socialLinks.tiktok : ''; }
-function addAppEventListeners() { logoutBtn.addEventListener('click', handleLogout); profileSettingsForm.addEventListener('submit', handleProfileSave); activityButtons.forEach(button => button.addEventListener('click', handleActivityButtonClick)); updateActivityBtn.addEventListener('click', sendDataToServer); cancelActivityBtn.addEventListener('click', cancelActivity); viewRadiusSlider.addEventListener('input', () => { viewRadiusValue.textContent = viewRadiusSlider.value; sendDataToServer(); }); visibilityRadiusSlider.addEventListener('input', () => { visibilityRadiusValue.textContent = visibilityRadiusSlider.value; }); closeChatBtn.addEventListener('click', () => chatContainer.classList.add('hidden')); chatForm.addEventListener('submit', handleSendMessage); closeProfileModalBtn.addEventListener('click', () => profileModal.classList.add('hidden')); chatPartnerLink.addEventListener('click', (e) => { e.preventDefault(); if (chatPartnerId) showUserProfile(chatPartnerId); }); document.body.addEventListener('click', (e) => { const favBtn = e.target.closest('.favorite-btn'); if (favBtn && favBtn.dataset.userid) { toggleFavorite(favBtn.dataset.userid); return; } const chatBtn = e.target.closest('.chat-btn'); if (chatBtn && chatBtn.dataset.userid) { startChat({ _id: chatBtn.dataset.userid, username: chatBtn.dataset.username, activityDescription: chatBtn.dataset.activitydesc }); return; } const userListItem = e.target.closest('.user-list-item'); if (userListItem && !e.target.closest('.user-item-controls')) { showUserProfile(userListItem.dataset.userid); } }); }
+function addAppEventListeners() {
+    logoutBtn.addEventListener('click', handleLogout);
+    profileSettingsForm.addEventListener('submit', handleProfileSave);
+    activityButtons.forEach(button => button.addEventListener('click', handleActivityButtonClick));
+    updateActivityBtn.addEventListener('click', () => { sendDataToServer(); alert('Aktivität erfolgreich gestartet/aktualisiert!'); });
+    cancelActivityBtn.addEventListener('click', cancelActivity);
+    viewRadiusSlider.addEventListener('input', () => { viewRadiusValue.textContent = viewRadiusSlider.value; sendDataToServer(); });
+    visibilityRadiusSlider.addEventListener('input', () => { visibilityRadiusValue.textContent = visibilityRadiusSlider.value; });
+    closeChatBtn.addEventListener('click', () => chatContainer.classList.add('hidden'));
+    chatForm.addEventListener('submit', handleSendMessage);
+    closeProfileModalBtn.addEventListener('click', () => profileModal.classList.add('hidden'));
+    chatPartnerLink.addEventListener('click', (e) => { e.preventDefault(); if (chatPartnerId) showUserProfile(chatPartnerId); });
+    
+    // FIX: Überarbeitete Logik für das mobile Menü
+    const closeMenu = () => {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+    };
+    menuToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+    });
+    sidebarOverlay.addEventListener('click', closeMenu);
+    sidebarCloseBtn.addEventListener('click', closeMenu);
+
+    document.body.addEventListener('click', (e) => {
+        const favBtn = e.target.closest('.favorite-btn');
+        if (favBtn && favBtn.dataset.userid) { toggleFavorite(favBtn.dataset.userid); return; }
+        const chatBtn = e.target.closest('.chat-btn');
+        if (chatBtn && chatBtn.dataset.userid) { startChat({ _id: chatBtn.dataset.userid, username: chatBtn.dataset.username, activityDescription: chatBtn.dataset.activitydesc }); return; }
+        const userListItem = e.target.closest('.user-list-item');
+        if (userListItem && !e.target.closest('.user-item-controls')) { showUserProfile(userListItem.dataset.userid); }
+    });
+}
 function initSocket() { if (socket) return; socket = io({ autoConnect: true }); socket.on('connect', () => { if (userState.position) sendDataToServer(); }); socket.on('users-update', renderUsers); socket.on('user-disconnected', removeUser); socket.on('privateMessage', handleIncomingMessage); }
 function sendDataToServer() { if (!socket || !userState.position || !userState.loggedIn) return; const selectedButton = document.querySelector('#activity-buttons button.active'); const data = { position: userState.position, radii: { view: parseInt(viewRadiusSlider.value, 10), visibility: parseInt(visibilityRadiusSlider.value, 10) }, activity: { category: selectedButton ? selectedButton.dataset.category : 'none', description: activityDescriptionInput.value, visibilityDuration: parseInt(visibilityDurationSelect.value, 10) } }; socket.emit('update-data', data); }
 function handleActivityButtonClick(e) { activityButtons.forEach(btn => btn.classList.remove('active')); e.currentTarget.classList.add('active'); }
@@ -148,7 +171,7 @@ async function showUserProfile(userId) {
 function renderUsers(users) {
     if (!userState.user) return;
     for (const id in userMarkers) { if (id !== 'own') { userMarkers[id].remove(); delete userMarkers[id]; } }
-    users.sort((a, b) => { const aIsFav = userState.user.favorites.includes(a._id); const bIsFav = userState.user.favorites.includes(b._id); return bIsFav - aIsFav; });
+    users.sort((a, b) => { if (a.isAdmin !== b.isAdmin) return a.isAdmin ? -1 : 1; const aIsFav = userState.user.favorites.includes(a._id); const bIsFav = userState.user.favorites.includes(b._id); return bIsFav - aIsFav; });
     userList.innerHTML = '';
     const visibleUsers = users.filter(user => user._id !== userState.user._id);
     if (visibleUsers.length === 0) { userList.innerHTML = '<p style="padding: 10px; text-align: center; color: #6c757d;">Keine aktiven User im Umkreis.</p>'; return; }
@@ -165,6 +188,7 @@ function renderUsers(users) {
         });
         userMarkers[user._id] = marker;
         const isFavorite = userState.user.favorites.includes(user._id);
+        const adminBadge = user.isAdmin ? '<span class="admin-badge">Admin</span>' : '';
         const listItem = document.createElement('div');
         listItem.className = 'user-list-item';
         listItem.dataset.userid = user._id;
@@ -174,7 +198,7 @@ function renderUsers(users) {
             <div class="user-info">
                 <img src="${user.profilePicture || '/default-avatar.png'}" class="list-avatar">
                 <div class="user-text">
-                    <span class="username">${user.username}</span>
+                    <span class="username">${user.username} ${adminBadge}</span>
                     <span class="activity">${iconHtml} ${user.currentActivity}</span>
                 </div>
             </div>
@@ -186,6 +210,15 @@ function renderUsers(users) {
     });
 }
 function removeUser(disconnectedUserId) { if (userMarkers[disconnectedUserId]) { userMarkers[disconnectedUserId].remove(); delete userMarkers[disconnectedUserId]; } const userListItem = document.querySelector(`.user-list-item[data-userid="${disconnectedUserId}"]`); if (userListItem) userListItem.remove(); }
+
+
+
+
+
+
+
+
+
 
 
 

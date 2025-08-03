@@ -16,20 +16,39 @@ body { font-family: 'Roboto', sans-serif; background-color: var(--background-col
 #auth-container button:hover { background-color: #0056b3; }
 .form-switch { text-align: center; margin-top: 16px; }
 .form-switch a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-/* NEU: Stil für den Kontakt-Hinweis */
-.contact-info {
-    text-align: center;
-    margin-top: 24px;
-    font-size: 12px;
-    color: var(--secondary-color);
+.contact-info { text-align: center; margin-top: 24px; font-size: 12px; color: var(--secondary-color); }
+.contact-info a { color: var(--secondary-color); text-decoration: underline; }
+#app-container { display: flex; height: 100vh; position: relative; overflow-x: hidden; }
+#sidebar { width: 380px; background: var(--sidebar-bg); padding: 24px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; border-right: 1px solid var(--border-color); flex-shrink: 0; }
+#map-container { flex-grow: 1; position: relative; }
+#map { height: 100%; width: 100%; }
+.admin-badge { background-color: #dc3545; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+.user-info .username { display: flex; align-items: center; }
+#menu-toggle-btn { display: none; position: absolute; top: 15px; left: 15px; z-index: 1000; background-color: white; border: 1px solid var(--border-color); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; box-shadow: var(--shadow); padding: 5px; }
+#menu-toggle-btn svg { width: 100%; height: 100%; fill: var(--font-color); }
+#sidebar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 3999; opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
+#sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+.sidebar-close-btn { display: none; } /* Standardmäßig auf Desktop versteckt */
+
+@media (max-width: 768px) { 
+    #sidebar { position: absolute; top: 0; left: 0; height: 100%; z-index: 4000; transform: translateX(-100%); transition: transform 0.3s ease-in-out; } 
+    #sidebar.open { transform: translateX(0); } 
+    #menu-toggle-btn { display: block; }
+    /* NEU: Styling für den Schließen-Button auf Mobilgeräten */
+    .sidebar-close-btn {
+        display: block;
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: var(--secondary-color);
+        cursor: pointer;
+    }
 }
-.contact-info a {
-    color: var(--secondary-color);
-    text-decoration: underline;
-}
-#app-container { display: flex; height: 100vh; }
-#sidebar { width: 380px; background: var(--sidebar-bg); padding: 24px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; border-right: 1px solid var(--border-color); }
-.sidebar-header { border-bottom: 1px solid var(--border-color); padding-bottom: 16px; }
+.sidebar-header { border-bottom: 1px solid var(--border-color); padding-bottom: 16px; position: relative; }
 .sidebar-header h2 { color: var(--primary-color); margin-bottom: 8px; }
 .sidebar-header > div { display: flex; justify-content: space-between; align-items: center; }
 #welcome-user { font-weight: 500; }
@@ -54,7 +73,6 @@ body { font-family: 'Roboto', sans-serif; background-color: var(--background-col
 .user-info { display: flex; align-items: center; gap: 12px; font-size: 14px; }
 .user-info .user-text { display: flex; flex-direction: column; }
 .list-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-.user-info .username { font-weight: 700; }
 .user-info .activity { color: var(--secondary-color); }
 .user-item-controls { display: flex; align-items: center; }
 .user-item-controls button { background: none; border: none; cursor: pointer; font-size: 24px; padding: 0 5px; }
@@ -90,6 +108,12 @@ body { font-family: 'Roboto', sans-serif; background-color: var(--background-col
 #profile-modal-content .profile-interests-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .interest-tag { background-color: #e9ecef; color: var(--font-color); padding: 5px 10px; border-radius: 15px; font-size: 14px; }
 #profile-modal-content .social-links a { color: var(--primary-color); text-decoration: none; margin-right: 15px; font-weight: 500; }
+
+
+
+
+
+
 
 
 
